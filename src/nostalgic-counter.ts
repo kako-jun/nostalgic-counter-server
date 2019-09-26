@@ -6,8 +6,11 @@ import express from "express";
 import bodyParser from "body-parser";
 const app = express();
 
-interface Config {
+interface AppConfig {
   listening_port: number;
+}
+
+interface UserConfig {
   interval_minutes: number;
   offset_count: number;
 }
@@ -18,21 +21,21 @@ interface Counter {
 
 class NostalgicCounter {
   private rootPath: string;
-  private config: Config;
+  private appConfig: AppConfig;
 
   constructor() {
     // instance variables
     this.rootPath = path.dirname(import.meta.url.replace("file:///", ""));
-    this.config = this.readJSON(
+    this.appConfig = this.readJSON(
       path.resolve(this.rootPath, "json", "config.json")
-    ) as Config;
+    ) as AppConfig;
 
     this.initServer();
   }
 
   public start() {
-    app.listen(this.config.listening_port, () => {
-      console.log("listening on port " + this.config.listening_port + "!");
+    app.listen(this.appConfig.listening_port, () => {
+      console.log("listening on port " + this.appConfig.listening_port + "!");
     });
   }
 
@@ -70,8 +73,22 @@ class NostalgicCounter {
     app.get("/api/counter", (req: express.Request, res: express.Response) => {
       console.log("/api/counter called.");
 
+      let user: string = "default";
+      if (req.query.user !== undefined) {
+        user = req.query.user;
+      }
+
+      if (!this.exist(path.resolve(this.rootPath, "json", user))) {
+        res.send({});
+        return;
+      }
+
+      const userConfig = this.readJSON(
+        path.resolve(this.rootPath, "json", user, "config.json")
+      ) as UserConfig;
+
       let counter: Counter = this.readJSON(
-        path.resolve(this.rootPath, "json", "counter.json")
+        path.resolve(this.rootPath, "json", user, "counter.json")
       ) as Counter;
 
       // console.log(req.headers["x-forwarded-for"]);
@@ -79,56 +96,149 @@ class NostalgicCounter {
       // console.log(req.headers.host);
 
       const host: string = req.headers["x-forwarded-for"] as string;
-      if (this.isIntervalOK(host)) {
-        counter = this.incrementCounter(counter);
+      if (this.isIntervalOK(userConfig, user, host)) {
+        counter = this.incrementCounter(user, counter);
       }
 
-      res.send({ total: counter.total + this.config.offset_count });
+      res.send({ total: counter.total + userConfig.offset_count });
+    });
+
+    app.get("/api/config", (req: express.Request, res: express.Response) => {
+      console.log("/api/config called.");
+
+      let user: string = "default";
+      if (req.query.user !== undefined) {
+        user = req.query.user;
+      }
+
+      let interval_minutes: number = 0;
+      if (req.query.interval_minutes !== undefined) {
+        interval_minutes = Number(req.query.interval_minutes);
+      }
+
+      let offset_count: number = 0;
+      if (req.query.offset_count !== undefined) {
+        offset_count = Number(req.query.offset_count);
+      }
+
+      this.createUserFiles(user, interval_minutes, offset_count);
+
+      const userConfig = this.readJSON(
+        path.resolve(this.rootPath, "json", user, "config.json")
+      ) as UserConfig;
+
+      res.send(userConfig);
+    });
+
+    app.get("/api/reset", (req: express.Request, res: express.Response) => {
+      console.log("/api/reset called.");
+
+      let user: string = "default";
+      if (req.query.user !== undefined) {
+        user = req.query.user;
+      }
+
+      if (!this.exist(path.resolve(this.rootPath, "json", user))) {
+        res.send({});
+        return;
+      }
+
+      this.writeJSON(
+        path.resolve(this.rootPath, "json", user, "counter.json"),
+        {
+          total: 0
+        }
+      );
+
+      const userConfig = this.readJSON(
+        path.resolve(this.rootPath, "json", user, "config.json")
+      ) as UserConfig;
+
+      const counter: Counter = this.readJSON(
+        path.resolve(this.rootPath, "json", user, "counter.json")
+      ) as Counter;
+
+      res.send({ total: counter.total + userConfig.offset_count });
     });
   }
 
-  private readJSON(path: string) {
+  private readJSON(jsonPath: string) {
     const json: Object = JSON.parse(
-      fs.readFileSync(path, { encoding: "utf-8" })
+      fs.readFileSync(jsonPath, { encoding: "utf-8" })
     );
     return json;
   }
 
-  private writeJSON(path: string, json: Object) {
+  private writeJSON(jsonPath: string, json: Object) {
     const jsonStr: string = JSON.stringify(json, null, "  ");
-    fs.writeFileSync(path, jsonStr, { encoding: "utf-8" });
+    fs.writeFileSync(jsonPath, jsonStr, { encoding: "utf-8" });
   }
 
-  private incrementCounter(src: Counter) {
+  private exist(filePath: string) {
+    try {
+      fs.statSync(filePath);
+      return true;
+    } catch (error) {}
+
+    return false;
+  }
+
+  private createUserFiles(
+    user: string,
+    interval_minutes: number,
+    offset_count: number
+  ) {
+    const userDirPath = path.resolve(this.rootPath, "json", user);
+    if (!this.exist(userDirPath)) {
+      fs.mkdirSync(userDirPath, { recursive: true });
+    }
+
+    this.writeJSON(path.resolve(userDirPath, "config.json"), {
+      interval_minutes: interval_minutes,
+      offset_count: offset_count
+    });
+
+    if (!this.exist(path.resolve(userDirPath, "counter.json"))) {
+      this.writeJSON(path.resolve(userDirPath, "counter.json"), {
+        total: 0
+      });
+    }
+
+    if (!this.exist(path.resolve(userDirPath, "ips.json"))) {
+      this.writeJSON(path.resolve(userDirPath, "ips.json"), {});
+    }
+  }
+
+  private incrementCounter(user: string, src: Counter) {
     const counter: Counter = {
       total: src.total + 1
     };
 
     this.writeJSON(
-      path.resolve(this.rootPath, "json", "counter.json"),
+      path.resolve(this.rootPath, "json", user, "counter.json"),
       counter
     );
     return counter;
   }
 
-  private isIntervalOK(host: string) {
+  private isIntervalOK(userConfig: UserConfig, user: string, host: string) {
     var now = new Date();
 
     const ips: any = this.readJSON(
-      path.resolve(this.rootPath, "json", "ips.json")
+      path.resolve(this.rootPath, "json", user, "ips.json")
     );
     if (ips[host]) {
       const pre = new Date(ips[host]);
       if (
         now.getTime() - pre.getTime() <
-        this.config.interval_minutes * 60 * 1000
+        userConfig.interval_minutes * 60 * 1000
       ) {
         return false;
       }
     }
 
     ips[host] = now;
-    this.writeJSON(path.resolve(this.rootPath, "json", "ips.json"), ips);
+    this.writeJSON(path.resolve(this.rootPath, "json", user, "ips.json"), ips);
     return true;
   }
 }
