@@ -1,0 +1,5 @@
+{
+  "listening_port": 42011,
+  "interval_minutes": 42,
+  "offset_count": 10000
+}
