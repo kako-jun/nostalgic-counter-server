@@ -1,14 +1,11 @@
 {
-  "name": "nostalgic-counter",
+  "name": "nostalgic-counter-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "app.js",
+  "description": "a nostalgic counter.",
+  "main": "dist/nostalgic-counter.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc && npm run rename && npm run copy",
-    "rename": "mv dist/app.js dist/app.mjs && mv dist/nostalgic-counter.js dist/nostalgic-counter.mjs",
-    "copy": "cp -r src/json/ dist/",
-    "start": "node --experimental-modules dist/app.mjs"
+    "build": "tsc"
   },
   "author": "kako-jun",
   "license": "MIT",
@@ -23,5 +20,14 @@
     "@types/lodash": "^4.14.139",
     "@types/node": "^12.7.8",
     "typescript": "^3.6.3"
+  },
+  "keywords": [
+    "nostalgic",
+    "counter"
+  ],
+  "homepage": "https://llll-ll.com",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:kako-jun/nostalgic-counter-server.git"
   }
 }

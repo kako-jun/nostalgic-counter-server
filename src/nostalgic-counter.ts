@@ -1,5 +1,6 @@
 "use strict";
 import _ from "lodash";
+import os from "os";
 import fs from "fs";
 import path from "path";
 import express from "express";
@@ -23,9 +24,21 @@ class NostalgicCounter {
   private rootPath: string;
   private appConfig: AppConfig;
 
-  constructor() {
+  constructor(listening_port: number = 42011) {
     // instance variables
-    this.rootPath = path.dirname(import.meta.url.replace("file:///", ""));
+    // this.rootPath = path.dirname(import.meta.url.replace("file:///", ""));
+    // this.rootPath = __dirname;
+    this.rootPath = path.resolve(os.homedir(), ".nostalgic-counter");
+    if (!this.exist(path.resolve(this.rootPath, "json"))) {
+      fs.mkdirSync(path.resolve(this.rootPath, "json"), { recursive: true });
+    }
+
+    if (!this.exist(path.resolve(this.rootPath, "json", "config.json"))) {
+      this.writeJSON(path.resolve(this.rootPath, "json", "config.json"), {
+        listening_port: listening_port
+      });
+    }
+
     this.appConfig = this.readJSON(
       path.resolve(this.rootPath, "json", "config.json")
     ) as AppConfig;
@@ -73,7 +86,7 @@ class NostalgicCounter {
     app.get("/api/counter", (req: express.Request, res: express.Response) => {
       console.log("/api/counter called.");
 
-      let user: string = "default";
+      let user = "default";
       if (req.query.user !== undefined) {
         user = req.query.user;
       }
@@ -87,7 +100,7 @@ class NostalgicCounter {
         path.resolve(this.rootPath, "json", user, "config.json")
       ) as UserConfig;
 
-      let counter: Counter = this.readJSON(
+      let counter = this.readJSON(
         path.resolve(this.rootPath, "json", user, "counter.json")
       ) as Counter;
 
@@ -95,7 +108,7 @@ class NostalgicCounter {
       // console.log(req.connection.remoteAddress);
       // console.log(req.headers.host);
 
-      const host: string = req.headers["x-forwarded-for"] as string;
+      const host = req.headers["x-forwarded-for"] as string;
       if (this.isIntervalOK(userConfig, user, host)) {
         counter = this.incrementCounter(user, counter);
       }
@@ -106,17 +119,17 @@ class NostalgicCounter {
     app.get("/api/config", (req: express.Request, res: express.Response) => {
       console.log("/api/config called.");
 
-      let user: string = "default";
+      let user = "default";
       if (req.query.user !== undefined) {
         user = req.query.user;
       }
 
-      let interval_minutes: number = 0;
+      let interval_minutes = 0;
       if (req.query.interval_minutes !== undefined) {
         interval_minutes = Number(req.query.interval_minutes);
       }
 
-      let offset_count: number = 0;
+      let offset_count = 0;
       if (req.query.offset_count !== undefined) {
         offset_count = Number(req.query.offset_count);
       }
@@ -133,7 +146,7 @@ class NostalgicCounter {
     app.get("/api/reset", (req: express.Request, res: express.Response) => {
       console.log("/api/reset called.");
 
-      let user: string = "default";
+      let user = "default";
       if (req.query.user !== undefined) {
         user = req.query.user;
       }
@@ -170,7 +183,7 @@ class NostalgicCounter {
   }
 
   private writeJSON(jsonPath: string, json: Object) {
-    const jsonStr: string = JSON.stringify(json, null, "  ");
+    const jsonStr = JSON.stringify(json, null, "  ");
     fs.writeFileSync(jsonPath, jsonStr, { encoding: "utf-8" });
   }
 
@@ -243,5 +256,5 @@ class NostalgicCounter {
   }
 }
 
-// module.exports = NostalgicCounter;
-export default NostalgicCounter;
+module.exports = NostalgicCounter;
+// export default NostalgicCounter;
