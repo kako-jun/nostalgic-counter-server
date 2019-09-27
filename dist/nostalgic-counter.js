@@ -15,6 +15,7 @@ var NostalgicCounter = (function () {
         this.rootPath = path_1.default.resolve(os_1.default.homedir(), ".nostalgic-counter");
         if (!this.exist(path_1.default.resolve(this.rootPath, "json"))) {
             fs_1.default.mkdirSync(path_1.default.resolve(this.rootPath, "json"), { recursive: true });
+            this.createUserFiles("default", 0, 0);
         }
         if (!this.exist(path_1.default.resolve(this.rootPath, "json", "config.json"))) {
             this.writeJSON(path_1.default.resolve(this.rootPath, "json", "config.json"), {
