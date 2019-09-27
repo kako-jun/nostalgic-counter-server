@@ -34,13 +34,6 @@ var NostalgicCounter = (function () {
     NostalgicCounter.prototype.initServer = function () {
         var _this = this;
         app.set("trust proxy", true);
-        app.use(function (req, res, next) {
-            res.header("Content-Type", "application/json");
-            res.header("Access-Control-Allow-Origin", "*");
-            res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-            res.header("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS");
-            next();
-        });
         app.use(body_parser_1.default.urlencoded({
             extended: true
         }));
