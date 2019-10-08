@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var os_1 = __importDefault(require("os"));
 var fs_1 = __importDefault(require("fs"));
 var path_1 = __importDefault(require("path"));
+var moment_1 = __importDefault(require("moment"));
 var express_1 = __importDefault(require("express"));
 var body_parser_1 = __importDefault(require("body-parser"));
 var app = express_1.default();
@@ -114,8 +115,21 @@ var NostalgicCounter = (function () {
                 });
                 return;
             }
+            var now = moment_1.default();
             _this.writeJSON(path_1.default.resolve(_this.rootPath, "json", id, "counter.json"), {
-                total: 0
+                total: 0,
+                today: 0,
+                today_date: now.format("YYYY-MM-DD"),
+                yesterday: 0,
+                yesterday_date: now.subtract(1, "day").format("YYYY-MM-DD"),
+                this_month: 0,
+                this_month_date: now.format("YYYY-MM"),
+                last_month: 0,
+                last_month_date: now.subtract(1, "month").format("YYYY-MM"),
+                this_year: 0,
+                this_year_date: now.format("YYYY"),
+                last_year: 0,
+                last_year_date: now.subtract(1, "year").format("YYYY")
             });
             var idConfig = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", id, "config.json"));
             var counter = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", id, "counter.json"));
@@ -173,8 +187,21 @@ var NostalgicCounter = (function () {
             interval_minutes: interval_minutes,
             offset_count: offset_count
         });
+        var now = moment_1.default();
         this.writeJSON(path_1.default.resolve(idDirPath, "counter.json"), {
-            total: 0
+            total: 0,
+            today: 0,
+            today_date: now.format("YYYY-MM-DD"),
+            yesterday: 0,
+            yesterday_date: now.subtract(1, "day").format("YYYY-MM-DD"),
+            this_month: 0,
+            this_month_date: now.format("YYYY-MM"),
+            last_month: 0,
+            last_month_date: now.subtract(1, "month").format("YYYY-MM"),
+            this_year: 0,
+            this_year_date: now.format("YYYY"),
+            last_year: 0,
+            last_year_date: now.subtract(1, "year").format("YYYY")
         });
         this.writeJSON(path_1.default.resolve(idDirPath, "ips.json"), {});
         return true;
@@ -187,8 +214,51 @@ var NostalgicCounter = (function () {
         return false;
     };
     NostalgicCounter.prototype.incrementCounter = function (id, src) {
+        var now = moment_1.default();
+        var today = 0;
+        var today_date = now.format("YYYY-MM-DD");
+        if (today_date === src.today_date) {
+            today = src.today + 1;
+        }
+        var yesterday = 0;
+        var yesterday_date = now.subtract(1, "day").format("YYYY-MM-DD");
+        if (yesterday_date === src.yesterday_date) {
+            yesterday = src.yesterday + 1;
+        }
+        var this_month = 0;
+        var this_month_date = now.format("YYYY-MM");
+        if (this_month_date === src.this_month_date) {
+            this_month = src.this_month + 1;
+        }
+        var last_month = 0;
+        var last_month_date = now.subtract(1, "month").format("YYYY-MM");
+        if (last_month_date === src.last_month_date) {
+            last_month = src.last_month + 1;
+        }
+        var this_year = 0;
+        var this_year_date = now.format("YYYY");
+        if (this_year_date === src.this_year_date) {
+            this_year = src.this_year + 1;
+        }
+        var last_year = 0;
+        var last_year_date = now.subtract(1, "year").format("YYYY");
+        if (last_year_date === src.last_year_date) {
+            last_year = src.last_year + 1;
+        }
         var counter = {
-            total: src.total + 1
+            total: src.total + 1,
+            today: today,
+            today_date: today_date,
+            yesterday: yesterday,
+            yesterday_date: yesterday_date,
+            this_month: this_month,
+            this_month_date: this_month_date,
+            last_month: last_month,
+            last_month_date: last_month_date,
+            this_year: this_year,
+            this_year_date: this_year_date,
+            last_year: last_year,
+            last_year_date: last_year_date
         };
         this.writeJSON(path_1.default.resolve(this.rootPath, "json", id, "counter.json"), counter);
         return counter;

@@ -3,6 +3,7 @@ import _ from "lodash";
 import os from "os";
 import fs from "fs";
 import path from "path";
+import moment from "moment";
 import express from "express";
 import bodyParser from "body-parser";
 const app = express();
@@ -22,6 +23,18 @@ interface IDConfig {
 
 interface Counter {
   total: number;
+  today: number;
+  today_date: string;
+  yesterday: number;
+  yesterday_date: string;
+  this_month: number;
+  this_month_date: string;
+  last_month: number;
+  last_month_date: string;
+  this_year: number;
+  this_year_date: string;
+  last_year: number;
+  last_year_date: string;
 }
 
 class NostalgicCounter {
@@ -189,8 +202,21 @@ class NostalgicCounter {
         return;
       }
 
+      const now = moment();
       this.writeJSON(path.resolve(this.rootPath, "json", id, "counter.json"), {
-        total: 0
+        total: 0,
+        today: 0,
+        today_date: now.format("YYYY-MM-DD"),
+        yesterday: 0,
+        yesterday_date: now.subtract(1, "day").format("YYYY-MM-DD"),
+        this_month: 0,
+        this_month_date: now.format("YYYY-MM"),
+        last_month: 0,
+        last_month_date: now.subtract(1, "month").format("YYYY-MM"),
+        this_year: 0,
+        this_year_date: now.format("YYYY"),
+        last_year: 0,
+        last_year_date: now.subtract(1, "year").format("YYYY")
       });
 
       const idConfig = this.readJSON(
@@ -283,8 +309,21 @@ class NostalgicCounter {
       offset_count: offset_count
     });
 
+    const now = moment();
     this.writeJSON(path.resolve(idDirPath, "counter.json"), {
-      total: 0
+      total: 0,
+      today: 0,
+      today_date: now.format("YYYY-MM-DD"),
+      yesterday: 0,
+      yesterday_date: now.subtract(1, "day").format("YYYY-MM-DD"),
+      this_month: 0,
+      this_month_date: now.format("YYYY-MM"),
+      last_month: 0,
+      last_month_date: now.subtract(1, "month").format("YYYY-MM"),
+      this_year: 0,
+      this_year_date: now.format("YYYY"),
+      last_year: 0,
+      last_year_date: now.subtract(1, "year").format("YYYY")
     });
 
     this.writeJSON(path.resolve(idDirPath, "ips.json"), {});
@@ -305,8 +344,58 @@ class NostalgicCounter {
   }
 
   private incrementCounter(id: string, src: Counter) {
+    const now = moment();
+
+    let today = 0;
+    const today_date = now.format("YYYY-MM-DD");
+    if (today_date === src.today_date) {
+      today = src.today + 1;
+    }
+
+    let yesterday = 0;
+    const yesterday_date = now.subtract(1, "day").format("YYYY-MM-DD");
+    if (yesterday_date === src.yesterday_date) {
+      yesterday = src.yesterday + 1;
+    }
+
+    let this_month = 0;
+    const this_month_date = now.format("YYYY-MM");
+    if (this_month_date === src.this_month_date) {
+      this_month = src.this_month + 1;
+    }
+
+    let last_month = 0;
+    const last_month_date = now.subtract(1, "month").format("YYYY-MM");
+    if (last_month_date === src.last_month_date) {
+      last_month = src.last_month + 1;
+    }
+
+    let this_year = 0;
+    const this_year_date = now.format("YYYY");
+    if (this_year_date === src.this_year_date) {
+      this_year = src.this_year + 1;
+    }
+
+    let last_year = 0;
+    const last_year_date = now.subtract(1, "year").format("YYYY");
+    if (last_year_date === src.last_year_date) {
+      last_year = src.last_year + 1;
+    }
+
     const counter: Counter = {
-      total: src.total + 1
+      total: src.total + 1,
+      today: today,
+      today_date: today_date,
+      yesterday: yesterday,
+      yesterday_date: yesterday_date,
+      this_month: this_month,
+      this_month_date: this_month_date,
+      last_month: last_month,
+      last_month_date: last_month_date,
+      this_year: this_year,
+      this_year_date: this_year_date,
+      last_year: last_year,
+      last_year_date: last_year_date
     };
 
     this.writeJSON(
