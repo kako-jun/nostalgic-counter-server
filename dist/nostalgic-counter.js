@@ -85,7 +85,7 @@ var NostalgicCounter = (function () {
                 });
                 return;
             }
-            _this.writeJSON(path_1.default.resolve(_this.rootPath, "json", "config.json"), {
+            _this.writeJSON(path_1.default.resolve(_this.rootPath, "json", id, "config.json"), {
                 interval_minutes: interval_minutes,
                 offset_count: offset_count
             });

@@ -150,7 +150,7 @@ class NostalgicCounter {
         return;
       }
 
-      this.writeJSON(path.resolve(this.rootPath, "json", "config.json"), {
+      this.writeJSON(path.resolve(this.rootPath, "json", id, "config.json"), {
         interval_minutes: interval_minutes,
         offset_count: offset_count
       });
