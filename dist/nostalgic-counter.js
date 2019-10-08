@@ -151,9 +151,9 @@ var NostalgicCounter = (function () {
             var counter = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", id, "counter.json"));
             var host = req.headers["x-forwarded-for"];
             if (_this.isIntervalOK(idConfig, id, host)) {
-                counter = _this.incrementCounter(id, counter);
+                counter = _this.incrementCounter(id, counter, idConfig.offset_count);
             }
-            res.send({ total: counter.total + idConfig.offset_count });
+            res.send(counter);
         });
     };
     NostalgicCounter.prototype.readJSON = function (jsonPath) {
@@ -213,7 +213,7 @@ var NostalgicCounter = (function () {
         }
         return false;
     };
-    NostalgicCounter.prototype.incrementCounter = function (id, src) {
+    NostalgicCounter.prototype.incrementCounter = function (id, src, offset_count) {
         var now = moment_1.default();
         var today = 0;
         var today_date = now.format("YYYY-MM-DD");
@@ -223,7 +223,7 @@ var NostalgicCounter = (function () {
         var yesterday = 0;
         var yesterday_date = now.subtract(1, "day").format("YYYY-MM-DD");
         if (yesterday_date === src.yesterday_date) {
-            yesterday = src.yesterday + 1;
+            yesterday = src.yesterday;
         }
         var this_month = 0;
         var this_month_date = now.format("YYYY-MM");
@@ -233,7 +233,7 @@ var NostalgicCounter = (function () {
         var last_month = 0;
         var last_month_date = now.subtract(1, "month").format("YYYY-MM");
         if (last_month_date === src.last_month_date) {
-            last_month = src.last_month + 1;
+            last_month = src.last_month;
         }
         var this_year = 0;
         var this_year_date = now.format("YYYY");
@@ -243,10 +243,10 @@ var NostalgicCounter = (function () {
         var last_year = 0;
         var last_year_date = now.subtract(1, "year").format("YYYY");
         if (last_year_date === src.last_year_date) {
-            last_year = src.last_year + 1;
+            last_year = src.last_year;
         }
         var counter = {
-            total: src.total + 1,
+            total: src.total + 1 + offset_count,
             today: today,
             today_date: today_date,
             yesterday: yesterday,
