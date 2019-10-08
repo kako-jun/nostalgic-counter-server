@@ -356,6 +356,8 @@ class NostalgicCounter {
     const yesterday_date = now.subtract(1, "day").format("YYYY-MM-DD");
     if (yesterday_date === src.yesterday_date) {
       yesterday = src.yesterday;
+    } else if (yesterday_date === src.today_date) {
+      yesterday = src.today;
     }
 
     let this_month = 0;
@@ -368,6 +370,8 @@ class NostalgicCounter {
     const last_month_date = now.subtract(1, "month").format("YYYY-MM");
     if (last_month_date === src.last_month_date) {
       last_month = src.last_month;
+    } else if (last_month_date === src.this_month_date) {
+      last_month = src.this_month;
     }
 
     let this_year = 0;
@@ -380,6 +384,8 @@ class NostalgicCounter {
     const last_year_date = now.subtract(1, "year").format("YYYY");
     if (last_year_date === src.last_year_date) {
       last_year = src.last_year;
+    } else if (last_year_date === src.this_year_date) {
+      last_year = src.this_year;
     }
 
     const counter: Counter = {

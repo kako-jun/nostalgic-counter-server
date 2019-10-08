@@ -225,6 +225,9 @@ var NostalgicCounter = (function () {
         if (yesterday_date === src.yesterday_date) {
             yesterday = src.yesterday;
         }
+        else if (yesterday_date === src.today_date) {
+            yesterday = src.today;
+        }
         var this_month = 0;
         var this_month_date = now.format("YYYY-MM");
         if (this_month_date === src.this_month_date) {
@@ -235,6 +238,9 @@ var NostalgicCounter = (function () {
         if (last_month_date === src.last_month_date) {
             last_month = src.last_month;
         }
+        else if (last_month_date === src.this_month_date) {
+            last_month = src.this_month;
+        }
         var this_year = 0;
         var this_year_date = now.format("YYYY");
         if (this_year_date === src.this_year_date) {
@@ -244,6 +250,9 @@ var NostalgicCounter = (function () {
         var last_year_date = now.subtract(1, "year").format("YYYY");
         if (last_year_date === src.last_year_date) {
             last_year = src.last_year;
+        }
+        else if (last_year_date === src.this_year_date) {
+            last_year = src.this_year;
         }
         var counter = {
             total: src.total + 1 + offset_count,
