@@ -15,7 +15,7 @@ var NostalgicCounter = (function () {
         this.rootPath = path_1.default.resolve(os_1.default.homedir(), ".nostalgic-counter");
         if (!this.exist(path_1.default.resolve(this.rootPath, "json"))) {
             fs_1.default.mkdirSync(path_1.default.resolve(this.rootPath, "json"), { recursive: true });
-            this.createUserFiles("default", 0, 0);
+            this.createIDFiles("default", "password", 0, 0);
         }
         if (!this.exist(path_1.default.resolve(this.rootPath, "json", "config.json"))) {
             this.writeJSON(path_1.default.resolve(this.rootPath, "json", "config.json"), {
@@ -38,29 +38,32 @@ var NostalgicCounter = (function () {
             extended: true
         }));
         app.use(body_parser_1.default.json());
-        app.get("/api/counter", function (req, res) {
-            console.log("/api/counter called.");
-            var user = "default";
-            if (req.query.user !== undefined) {
-                user = req.query.user;
+        app.get("/api/new", function (req, res) {
+            console.log("/api/new called.");
+            var id = "default";
+            if (req.query.id !== undefined) {
+                id = req.query.id;
             }
-            if (!_this.exist(path_1.default.resolve(_this.rootPath, "json", user))) {
-                res.send({});
+            var password = "password";
+            if (req.query.password !== undefined) {
+                password = req.query.password;
+            }
+            if (!_this.createIDFiles(id, password, 0, 0)) {
+                res.send({ error: "ID '" + id + "' already exists." });
                 return;
             }
-            var userConfig = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", user, "config.json"));
-            var counter = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", user, "counter.json"));
-            var host = req.headers["x-forwarded-for"];
-            if (_this.isIntervalOK(userConfig, user, host)) {
-                counter = _this.incrementCounter(user, counter);
-            }
-            res.send({ total: counter.total + userConfig.offset_count });
+            var idConfig = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", id, "config.json"));
+            res.send(idConfig);
         });
         app.get("/api/config", function (req, res) {
             console.log("/api/config called.");
-            var user = "default";
-            if (req.query.user !== undefined) {
-                user = req.query.user;
+            var id = "default";
+            if (req.query.id !== undefined) {
+                id = req.query.id;
+            }
+            var password = "password";
+            if (req.query.password !== undefined) {
+                password = req.query.password;
             }
             var interval_minutes = 0;
             if (req.query.interval_minutes !== undefined) {
@@ -70,26 +73,73 @@ var NostalgicCounter = (function () {
             if (req.query.offset_count !== undefined) {
                 offset_count = Number(req.query.offset_count);
             }
-            _this.createUserFiles(user, interval_minutes, offset_count);
-            var userConfig = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", user, "config.json"));
-            res.send(userConfig);
+            if (!_this.exist(path_1.default.resolve(_this.rootPath, "json", id))) {
+                res.send({
+                    error: "ID '" + id + "' not found."
+                });
+                return;
+            }
+            if (!_this.isPasswordCorrect(id, password)) {
+                res.send({
+                    error: "Wrong ID or password."
+                });
+                return;
+            }
+            _this.writeJSON(path_1.default.resolve(_this.rootPath, "json", "config.json"), {
+                interval_minutes: interval_minutes,
+                offset_count: offset_count
+            });
+            var idConfig = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", id, "config.json"));
+            res.send(idConfig);
         });
         app.get("/api/reset", function (req, res) {
             console.log("/api/reset called.");
-            var user = "default";
-            if (req.query.user !== undefined) {
-                user = req.query.user;
+            var id = "default";
+            if (req.query.id !== undefined) {
+                id = req.query.id;
             }
-            if (!_this.exist(path_1.default.resolve(_this.rootPath, "json", user))) {
-                res.send({});
+            var password = "password";
+            if (req.query.password !== undefined) {
+                password = req.query.password;
+            }
+            if (!_this.exist(path_1.default.resolve(_this.rootPath, "json", id))) {
+                res.send({
+                    error: "ID '" + id + "' not found."
+                });
                 return;
             }
-            _this.writeJSON(path_1.default.resolve(_this.rootPath, "json", user, "counter.json"), {
+            if (!_this.isPasswordCorrect(id, password)) {
+                res.send({
+                    error: "Wrong ID or password."
+                });
+                return;
+            }
+            _this.writeJSON(path_1.default.resolve(_this.rootPath, "json", id, "counter.json"), {
                 total: 0
             });
-            var userConfig = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", user, "config.json"));
-            var counter = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", user, "counter.json"));
-            res.send({ total: counter.total + userConfig.offset_count });
+            var idConfig = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", id, "config.json"));
+            var counter = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", id, "counter.json"));
+            res.send({ total: counter.total + idConfig.offset_count });
+        });
+        app.get("/api/counter", function (req, res) {
+            console.log("/api/counter called.");
+            var id = "default";
+            if (req.query.id !== undefined) {
+                id = req.query.id;
+            }
+            if (!_this.exist(path_1.default.resolve(_this.rootPath, "json", id))) {
+                res.send({
+                    error: "ID '" + id + "' not found."
+                });
+                return;
+            }
+            var idConfig = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", id, "config.json"));
+            var counter = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", id, "counter.json"));
+            var host = req.headers["x-forwarded-for"];
+            if (_this.isIntervalOK(idConfig, id, host)) {
+                counter = _this.incrementCounter(id, counter);
+            }
+            res.send({ total: counter.total + idConfig.offset_count });
         });
     };
     NostalgicCounter.prototype.readJSON = function (jsonPath) {
@@ -108,43 +158,53 @@ var NostalgicCounter = (function () {
         catch (error) { }
         return false;
     };
-    NostalgicCounter.prototype.createUserFiles = function (user, interval_minutes, offset_count) {
-        var userDirPath = path_1.default.resolve(this.rootPath, "json", user);
-        if (!this.exist(userDirPath)) {
-            fs_1.default.mkdirSync(userDirPath, { recursive: true });
+    NostalgicCounter.prototype.createIDFiles = function (id, password, interval_minutes, offset_count) {
+        var idDirPath = path_1.default.resolve(this.rootPath, "json", id);
+        if (this.exist(idDirPath)) {
+            return false;
         }
-        this.writeJSON(path_1.default.resolve(userDirPath, "config.json"), {
+        else {
+            fs_1.default.mkdirSync(idDirPath, { recursive: true });
+        }
+        this.writeJSON(path_1.default.resolve(idDirPath, "password.json"), {
+            password: password
+        });
+        this.writeJSON(path_1.default.resolve(idDirPath, "config.json"), {
             interval_minutes: interval_minutes,
             offset_count: offset_count
         });
-        if (!this.exist(path_1.default.resolve(userDirPath, "counter.json"))) {
-            this.writeJSON(path_1.default.resolve(userDirPath, "counter.json"), {
-                total: 0
-            });
-        }
-        if (!this.exist(path_1.default.resolve(userDirPath, "ips.json"))) {
-            this.writeJSON(path_1.default.resolve(userDirPath, "ips.json"), {});
-        }
+        this.writeJSON(path_1.default.resolve(idDirPath, "counter.json"), {
+            total: 0
+        });
+        this.writeJSON(path_1.default.resolve(idDirPath, "ips.json"), {});
+        return true;
     };
-    NostalgicCounter.prototype.incrementCounter = function (user, src) {
+    NostalgicCounter.prototype.isPasswordCorrect = function (id, password) {
+        var passwordObject = this.readJSON(path_1.default.resolve(this.rootPath, "json", id, "password.json"));
+        if (password === passwordObject.password) {
+            return true;
+        }
+        return false;
+    };
+    NostalgicCounter.prototype.incrementCounter = function (id, src) {
         var counter = {
             total: src.total + 1
         };
-        this.writeJSON(path_1.default.resolve(this.rootPath, "json", user, "counter.json"), counter);
+        this.writeJSON(path_1.default.resolve(this.rootPath, "json", id, "counter.json"), counter);
         return counter;
     };
-    NostalgicCounter.prototype.isIntervalOK = function (userConfig, user, host) {
+    NostalgicCounter.prototype.isIntervalOK = function (idConfig, id, host) {
         var now = new Date();
-        var ips = this.readJSON(path_1.default.resolve(this.rootPath, "json", user, "ips.json"));
+        var ips = this.readJSON(path_1.default.resolve(this.rootPath, "json", id, "ips.json"));
         if (ips[host]) {
             var pre = new Date(ips[host]);
             if (now.getTime() - pre.getTime() <
-                userConfig.interval_minutes * 60 * 1000) {
+                idConfig.interval_minutes * 60 * 1000) {
                 return false;
             }
         }
         ips[host] = now;
-        this.writeJSON(path_1.default.resolve(this.rootPath, "json", user, "ips.json"), ips);
+        this.writeJSON(path_1.default.resolve(this.rootPath, "json", id, "ips.json"), ips);
         return true;
     };
     return NostalgicCounter;

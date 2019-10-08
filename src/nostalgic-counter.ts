@@ -11,7 +11,11 @@ interface AppConfig {
   listening_port: number;
 }
 
-interface UserConfig {
+interface Password {
+  password: string;
+}
+
+interface IDConfig {
   interval_minutes: number;
   offset_count: number;
 }
@@ -31,7 +35,7 @@ class NostalgicCounter {
     this.rootPath = path.resolve(os.homedir(), ".nostalgic-counter");
     if (!this.exist(path.resolve(this.rootPath, "json"))) {
       fs.mkdirSync(path.resolve(this.rootPath, "json"), { recursive: true });
-      this.createUserFiles("default", 0, 0);
+      this.createIDFiles("default", "password", 0, 0);
     }
 
     if (!this.exist(path.resolve(this.rootPath, "json", "config.json"))) {
@@ -84,45 +88,42 @@ class NostalgicCounter {
 
     app.use(bodyParser.json());
 
-    app.get("/api/counter", (req: express.Request, res: express.Response) => {
-      console.log("/api/counter called.");
+    app.get("/api/new", (req: express.Request, res: express.Response) => {
+      console.log("/api/new called.");
 
-      let user = "default";
-      if (req.query.user !== undefined) {
-        user = req.query.user;
+      let id = "default";
+      if (req.query.id !== undefined) {
+        id = req.query.id;
       }
 
-      if (!this.exist(path.resolve(this.rootPath, "json", user))) {
-        res.send({});
+      let password = "password";
+      if (req.query.password !== undefined) {
+        password = req.query.password;
+      }
+
+      if (!this.createIDFiles(id, password, 0, 0)) {
+        res.send({ error: "ID '" + id + "' already exists." });
         return;
       }
 
-      const userConfig = this.readJSON(
-        path.resolve(this.rootPath, "json", user, "config.json")
-      ) as UserConfig;
+      const idConfig = this.readJSON(
+        path.resolve(this.rootPath, "json", id, "config.json")
+      ) as IDConfig;
 
-      let counter = this.readJSON(
-        path.resolve(this.rootPath, "json", user, "counter.json")
-      ) as Counter;
-
-      // console.log(req.headers["x-forwarded-for"]);
-      // console.log(req.connection.remoteAddress);
-      // console.log(req.headers.host);
-
-      const host = req.headers["x-forwarded-for"] as string;
-      if (this.isIntervalOK(userConfig, user, host)) {
-        counter = this.incrementCounter(user, counter);
-      }
-
-      res.send({ total: counter.total + userConfig.offset_count });
+      res.send(idConfig);
     });
 
     app.get("/api/config", (req: express.Request, res: express.Response) => {
       console.log("/api/config called.");
 
-      let user = "default";
-      if (req.query.user !== undefined) {
-        user = req.query.user;
+      let id = "default";
+      if (req.query.id !== undefined) {
+        id = req.query.id;
+      }
+
+      let password = "password";
+      if (req.query.password !== undefined) {
+        password = req.query.password;
       }
 
       let interval_minutes = 0;
@@ -135,44 +136,107 @@ class NostalgicCounter {
         offset_count = Number(req.query.offset_count);
       }
 
-      this.createUserFiles(user, interval_minutes, offset_count);
+      if (!this.exist(path.resolve(this.rootPath, "json", id))) {
+        res.send({
+          error: "ID '" + id + "' not found."
+        });
+        return;
+      }
 
-      const userConfig = this.readJSON(
-        path.resolve(this.rootPath, "json", user, "config.json")
-      ) as UserConfig;
+      if (!this.isPasswordCorrect(id, password)) {
+        res.send({
+          error: "Wrong ID or password."
+        });
+        return;
+      }
 
-      res.send(userConfig);
+      this.writeJSON(path.resolve(this.rootPath, "json", "config.json"), {
+        interval_minutes: interval_minutes,
+        offset_count: offset_count
+      });
+
+      const idConfig = this.readJSON(
+        path.resolve(this.rootPath, "json", id, "config.json")
+      ) as IDConfig;
+
+      res.send(idConfig);
     });
 
     app.get("/api/reset", (req: express.Request, res: express.Response) => {
       console.log("/api/reset called.");
 
-      let user = "default";
-      if (req.query.user !== undefined) {
-        user = req.query.user;
+      let id = "default";
+      if (req.query.id !== undefined) {
+        id = req.query.id;
       }
 
-      if (!this.exist(path.resolve(this.rootPath, "json", user))) {
-        res.send({});
+      let password = "password";
+      if (req.query.password !== undefined) {
+        password = req.query.password;
+      }
+
+      if (!this.exist(path.resolve(this.rootPath, "json", id))) {
+        res.send({
+          error: "ID '" + id + "' not found."
+        });
         return;
       }
 
-      this.writeJSON(
-        path.resolve(this.rootPath, "json", user, "counter.json"),
-        {
-          total: 0
-        }
-      );
+      if (!this.isPasswordCorrect(id, password)) {
+        res.send({
+          error: "Wrong ID or password."
+        });
+        return;
+      }
 
-      const userConfig = this.readJSON(
-        path.resolve(this.rootPath, "json", user, "config.json")
-      ) as UserConfig;
+      this.writeJSON(path.resolve(this.rootPath, "json", id, "counter.json"), {
+        total: 0
+      });
+
+      const idConfig = this.readJSON(
+        path.resolve(this.rootPath, "json", id, "config.json")
+      ) as IDConfig;
 
       const counter: Counter = this.readJSON(
-        path.resolve(this.rootPath, "json", user, "counter.json")
+        path.resolve(this.rootPath, "json", id, "counter.json")
       ) as Counter;
 
-      res.send({ total: counter.total + userConfig.offset_count });
+      res.send({ total: counter.total + idConfig.offset_count });
+    });
+
+    app.get("/api/counter", (req: express.Request, res: express.Response) => {
+      console.log("/api/counter called.");
+
+      let id = "default";
+      if (req.query.id !== undefined) {
+        id = req.query.id;
+      }
+
+      if (!this.exist(path.resolve(this.rootPath, "json", id))) {
+        res.send({
+          error: "ID '" + id + "' not found."
+        });
+        return;
+      }
+
+      const idConfig = this.readJSON(
+        path.resolve(this.rootPath, "json", id, "config.json")
+      ) as IDConfig;
+
+      let counter = this.readJSON(
+        path.resolve(this.rootPath, "json", id, "counter.json")
+      ) as Counter;
+
+      // console.log(req.headers["x-forwarded-for"]);
+      // console.log(req.connection.remoteAddress);
+      // console.log(req.headers.host);
+
+      const host = req.headers["x-forwarded-for"] as string;
+      if (this.isIntervalOK(idConfig, id, host)) {
+        counter = this.incrementCounter(id, counter);
+      }
+
+      res.send({ total: counter.total + idConfig.offset_count });
     });
   }
 
@@ -197,62 +261,79 @@ class NostalgicCounter {
     return false;
   }
 
-  private createUserFiles(
-    user: string,
+  private createIDFiles(
+    id: string,
+    password: string,
     interval_minutes: number,
     offset_count: number
   ) {
-    const userDirPath = path.resolve(this.rootPath, "json", user);
-    if (!this.exist(userDirPath)) {
-      fs.mkdirSync(userDirPath, { recursive: true });
+    const idDirPath = path.resolve(this.rootPath, "json", id);
+    if (this.exist(idDirPath)) {
+      return false;
+    } else {
+      fs.mkdirSync(idDirPath, { recursive: true });
     }
 
-    this.writeJSON(path.resolve(userDirPath, "config.json"), {
+    this.writeJSON(path.resolve(idDirPath, "password.json"), {
+      password: password
+    });
+
+    this.writeJSON(path.resolve(idDirPath, "config.json"), {
       interval_minutes: interval_minutes,
       offset_count: offset_count
     });
 
-    if (!this.exist(path.resolve(userDirPath, "counter.json"))) {
-      this.writeJSON(path.resolve(userDirPath, "counter.json"), {
-        total: 0
-      });
-    }
+    this.writeJSON(path.resolve(idDirPath, "counter.json"), {
+      total: 0
+    });
 
-    if (!this.exist(path.resolve(userDirPath, "ips.json"))) {
-      this.writeJSON(path.resolve(userDirPath, "ips.json"), {});
-    }
+    this.writeJSON(path.resolve(idDirPath, "ips.json"), {});
+
+    return true;
   }
 
-  private incrementCounter(user: string, src: Counter) {
+  private isPasswordCorrect(id: string, password: string) {
+    const passwordObject = this.readJSON(
+      path.resolve(this.rootPath, "json", id, "password.json")
+    ) as Password;
+
+    if (password === passwordObject.password) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private incrementCounter(id: string, src: Counter) {
     const counter: Counter = {
       total: src.total + 1
     };
 
     this.writeJSON(
-      path.resolve(this.rootPath, "json", user, "counter.json"),
+      path.resolve(this.rootPath, "json", id, "counter.json"),
       counter
     );
     return counter;
   }
 
-  private isIntervalOK(userConfig: UserConfig, user: string, host: string) {
+  private isIntervalOK(idConfig: IDConfig, id: string, host: string) {
     var now = new Date();
 
     const ips: any = this.readJSON(
-      path.resolve(this.rootPath, "json", user, "ips.json")
+      path.resolve(this.rootPath, "json", id, "ips.json")
     );
     if (ips[host]) {
       const pre = new Date(ips[host]);
       if (
         now.getTime() - pre.getTime() <
-        userConfig.interval_minutes * 60 * 1000
+        idConfig.interval_minutes * 60 * 1000
       ) {
         return false;
       }
     }
 
     ips[host] = now;
-    this.writeJSON(path.resolve(this.rootPath, "json", user, "ips.json"), ips);
+    this.writeJSON(path.resolve(this.rootPath, "json", id, "ips.json"), ips);
     return true;
   }
 }
