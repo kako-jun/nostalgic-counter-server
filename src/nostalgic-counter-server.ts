@@ -12,6 +12,10 @@ interface AppConfig {
   listening_port: number;
 }
 
+interface IgnoreList {
+  host_list: Array<string>;
+}
+
 interface Password {
   password: string;
 }
@@ -54,6 +58,12 @@ class NostalgicCounter {
     if (!this.exist(path.resolve(this.rootPath, "json", "config.json"))) {
       this.writeJSON(path.resolve(this.rootPath, "json", "config.json"), {
         listening_port: listening_port
+      });
+    }
+
+    if (!this.exist(path.resolve(this.rootPath, "json", "ignore_list.json"))) {
+      this.writeJSON(path.resolve(this.rootPath, "json", "ignore_list.json"), {
+        host_list: []
       });
     }
 
@@ -104,6 +114,11 @@ class NostalgicCounter {
     app.get("/api/new", (req: express.Request, res: express.Response) => {
       console.log("/api/new called.");
 
+      const host = req.headers["x-forwarded-for"] as string;
+      if (this.isIgnore(host)) {
+        return;
+      }
+
       const id = req.query.id || "default";
       const password = req.query.password || "";
 
@@ -121,6 +136,11 @@ class NostalgicCounter {
 
     app.get("/api/config", (req: express.Request, res: express.Response) => {
       console.log("/api/config called.");
+
+      const host = req.headers["x-forwarded-for"] as string;
+      if (this.isIgnore(host)) {
+        return;
+      }
 
       const id = req.query.id || "default";
       const password = req.query.password || "";
@@ -177,6 +197,11 @@ class NostalgicCounter {
     app.get("/api/reset", (req: express.Request, res: express.Response) => {
       console.log("/api/reset called.");
 
+      const host = req.headers["x-forwarded-for"] as string;
+      if (this.isIgnore(host)) {
+        return;
+      }
+
       const id = req.query.id || "default";
       const password = req.query.password || "";
 
@@ -209,6 +234,11 @@ class NostalgicCounter {
     app.get("/api/counter", (req: express.Request, res: express.Response) => {
       console.log("/api/counter called.");
 
+      const host = req.headers["x-forwarded-for"] as string;
+      if (this.isIgnore(host)) {
+        return;
+      }
+
       const id = req.query.id || "default";
 
       let ex = false;
@@ -235,7 +265,6 @@ class NostalgicCounter {
       // console.log(req.connection.remoteAddress);
       // console.log(req.headers.host);
 
-      const host = req.headers["x-forwarded-for"] as string;
       if (this.isIntervalOK(idConfig, id, host)) {
         counter = this.incrementCounter(id, counter);
       }
@@ -286,6 +315,24 @@ class NostalgicCounter {
       fs.statSync(filePath);
       return true;
     } catch (error) {}
+
+    return false;
+  }
+
+  private isIgnore(host: string): boolean {
+    console.log(host);
+
+    const ignoreList = this.readJSON(
+      path.resolve(this.rootPath, "json", "ignore_list.json")
+    ) as IgnoreList;
+
+    const found = _.find(ignoreList.host_list, h => {
+      return h === host;
+    });
+
+    if (found) {
+      return true;
+    }
 
     return false;
   }

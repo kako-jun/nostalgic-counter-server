@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+var lodash_1 = __importDefault(require("lodash"));
 var os_1 = __importDefault(require("os"));
 var fs_1 = __importDefault(require("fs"));
 var path_1 = __importDefault(require("path"));
@@ -23,6 +24,11 @@ var NostalgicCounter = (function () {
                 listening_port: listening_port
             });
         }
+        if (!this.exist(path_1.default.resolve(this.rootPath, "json", "ignore_list.json"))) {
+            this.writeJSON(path_1.default.resolve(this.rootPath, "json", "ignore_list.json"), {
+                host_list: []
+            });
+        }
         this.appConfig = this.readJSON(path_1.default.resolve(this.rootPath, "json", "config.json"));
         this.initServer();
     }
@@ -41,6 +47,10 @@ var NostalgicCounter = (function () {
         app.use(body_parser_1.default.json());
         app.get("/api/new", function (req, res) {
             console.log("/api/new called.");
+            var host = req.headers["x-forwarded-for"];
+            if (_this.isIgnore(host)) {
+                return;
+            }
             var id = req.query.id || "default";
             var password = req.query.password || "";
             if (!_this.createIDFiles(id, password, 0, 0)) {
@@ -52,6 +62,10 @@ var NostalgicCounter = (function () {
         });
         app.get("/api/config", function (req, res) {
             console.log("/api/config called.");
+            var host = req.headers["x-forwarded-for"];
+            if (_this.isIgnore(host)) {
+                return;
+            }
             var id = req.query.id || "default";
             var password = req.query.password || "";
             if (!_this.exist(path_1.default.resolve(_this.rootPath, "json", id))) {
@@ -94,6 +108,10 @@ var NostalgicCounter = (function () {
         });
         app.get("/api/reset", function (req, res) {
             console.log("/api/reset called.");
+            var host = req.headers["x-forwarded-for"];
+            if (_this.isIgnore(host)) {
+                return;
+            }
             var id = req.query.id || "default";
             var password = req.query.password || "";
             if (!_this.exist(path_1.default.resolve(_this.rootPath, "json", id))) {
@@ -114,6 +132,10 @@ var NostalgicCounter = (function () {
         });
         app.get("/api/counter", function (req, res) {
             console.log("/api/counter called.");
+            var host = req.headers["x-forwarded-for"];
+            if (_this.isIgnore(host)) {
+                return;
+            }
             var id = req.query.id || "default";
             var ex = false;
             if (req.query.ex !== undefined) {
@@ -127,7 +149,6 @@ var NostalgicCounter = (function () {
             }
             var counter = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", id, "counter.json"));
             var idConfig = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", id, "config.json"));
-            var host = req.headers["x-forwarded-for"];
             if (_this.isIntervalOK(idConfig, id, host)) {
                 counter = _this.incrementCounter(id, counter);
             }
@@ -172,6 +193,17 @@ var NostalgicCounter = (function () {
             return true;
         }
         catch (error) { }
+        return false;
+    };
+    NostalgicCounter.prototype.isIgnore = function (host) {
+        console.log(host);
+        var ignoreList = this.readJSON(path_1.default.resolve(this.rootPath, "json", "ignore_list.json"));
+        var found = lodash_1.default.find(ignoreList.host_list, function (h) {
+            return h === host;
+        });
+        if (found) {
+            return true;
+        }
         return false;
     };
     NostalgicCounter.prototype.createIDFiles = function (id, password, interval_minutes, offset_count) {
