@@ -2,7 +2,7 @@
   "name": "nostalgic-counter-server",
   "version": "1.0.8",
   "description": "a nostalgic counter.",
-  "main": "dist/nostalgic-counter.js",
+  "main": "dist/nostalgic-counter-server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc"
