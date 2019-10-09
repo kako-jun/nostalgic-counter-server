@@ -1,5 +1,5 @@
 "use strict";
 
-const NostalgicCounter = require("../dist/nostalgic-counter-server");
-const nostalgicCounter = new NostalgicCounter();
-nostalgicCounter.start();
+const NostalgicCounterServer = require("../dist/nostalgic-counter-server");
+const nostalgicCounterServer = new NostalgicCounterServer();
+nostalgicCounterServer.start();
