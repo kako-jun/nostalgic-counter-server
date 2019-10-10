@@ -81,25 +81,13 @@ class NostalgicCounter {
   private initServer(): void {
     app.set("trust proxy", true);
 
-    // app.use(
-    //   (
-    //     req: express.Request,
-    //     res: express.Response,
-    //     next: express.NextFunction
-    //   ) => {
-    //     res.header("Content-Type", "application/json");
-    //     res.header("Access-Control-Allow-Origin", "*");
-    //     res.header(
-    //       "Access-Control-Allow-Headers",
-    //       "Origin, X-Requested-With, Content-Type, Accept"
-    //     );
-    //     res.header(
-    //       "Access-Control-Allow-Methods",
-    //       "POST, GET, PUT, DELETE, OPTIONS"
-    //     );
-    //     next();
-    //   }
-    // );
+    // app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+    //   res.header("Content-Type", "application/json");
+    //   res.header("Access-Control-Allow-Origin", "*");
+    //   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    //   res.header("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS");
+    //   next();
+    // });
 
     app.use(bodyParser.urlencoded({ extended: true }));
 
