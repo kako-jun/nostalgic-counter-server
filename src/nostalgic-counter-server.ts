@@ -143,7 +143,7 @@ class NostalgicCounter {
           interval_minutes = Number(req.query.interval_minutes);
         }
       } else {
-        interval_minutes = idConfig.interval_minutes;
+        interval_minutes = idConfig.interval_minutes || 0;
       }
 
       let offset_count = 0;
@@ -152,7 +152,7 @@ class NostalgicCounter {
           offset_count = Number(req.query.offset_count);
         }
       } else {
-        offset_count = idConfig.offset_count;
+        offset_count = idConfig.offset_count || 0;
       }
 
       const dstIDConfig: IDConfig = {
