@@ -260,7 +260,7 @@ class NostalgicCounter {
   }
 
   private writeJSON(jsonPath: string, json: Object): void {
-    const jsonStr = JSON.stringify(json, null, "  ");
+    const jsonStr = JSON.stringify(json, null, 2);
     fs.writeFileSync(jsonPath, jsonStr, { encoding: "utf-8" });
   }
 
