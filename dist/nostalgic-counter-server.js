@@ -41,13 +41,11 @@ var NostalgicCounter = (function () {
     NostalgicCounter.prototype.initServer = function () {
         var _this = this;
         app.set("trust proxy", true);
-        app.use(body_parser_1.default.urlencoded({
-            extended: true
-        }));
+        app.use(body_parser_1.default.urlencoded({ extended: true }));
         app.use(body_parser_1.default.json());
-        app.get("/api/new", function (req, res) {
-            console.log("/api/new called.");
-            var host = req.headers["x-forwarded-for"];
+        app.get("/api/admin/new", function (req, res) {
+            console.log("/api/admin/new called.");
+            var host = req.headers["x-forwarded-for"] || "";
             if (_this.isIgnore(host)) {
                 return;
             }
@@ -60,24 +58,20 @@ var NostalgicCounter = (function () {
             var idConfig = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", id, "config.json"));
             res.send(idConfig);
         });
-        app.get("/api/config", function (req, res) {
-            console.log("/api/config called.");
-            var host = req.headers["x-forwarded-for"];
+        app.get("/api/admin/config", function (req, res) {
+            console.log("/api/admin/config called.");
+            var host = req.headers["x-forwarded-for"] || "";
             if (_this.isIgnore(host)) {
                 return;
             }
             var id = req.query.id || "default";
             var password = req.query.password || "";
             if (!_this.exist(path_1.default.resolve(_this.rootPath, "json", id))) {
-                res.send({
-                    error: "ID '" + id + "' not found."
-                });
+                res.send({ error: "ID '" + id + "' not found." });
                 return;
             }
             if (!_this.isPasswordCorrect(id, password)) {
-                res.send({
-                    error: "Wrong ID or password."
-                });
+                res.send({ error: "Wrong ID or password." });
                 return;
             }
             var idConfig = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", id, "config.json"));
@@ -88,7 +82,7 @@ var NostalgicCounter = (function () {
                 }
             }
             else {
-                interval_minutes = idConfig.interval_minutes;
+                interval_minutes = idConfig.interval_minutes || 0;
             }
             var offset_count = 0;
             if (req.query.offset_count !== undefined) {
@@ -97,7 +91,7 @@ var NostalgicCounter = (function () {
                 }
             }
             else {
-                offset_count = idConfig.offset_count;
+                offset_count = idConfig.offset_count || 0;
             }
             var dstIDConfig = {
                 interval_minutes: interval_minutes,
@@ -106,24 +100,20 @@ var NostalgicCounter = (function () {
             _this.writeJSON(path_1.default.resolve(_this.rootPath, "json", id, "config.json"), dstIDConfig);
             res.send(dstIDConfig);
         });
-        app.get("/api/reset", function (req, res) {
-            console.log("/api/reset called.");
-            var host = req.headers["x-forwarded-for"];
+        app.get("/api/admin/reset", function (req, res) {
+            console.log("/api/admin/reset called.");
+            var host = req.headers["x-forwarded-for"] || "";
             if (_this.isIgnore(host)) {
                 return;
             }
             var id = req.query.id || "default";
             var password = req.query.password || "";
             if (!_this.exist(path_1.default.resolve(_this.rootPath, "json", id))) {
-                res.send({
-                    error: "ID '" + id + "' not found."
-                });
+                res.send({ error: "ID '" + id + "' not found." });
                 return;
             }
             if (!_this.isPasswordCorrect(id, password)) {
-                res.send({
-                    error: "Wrong ID or password."
-                });
+                res.send({ error: "Wrong ID or password." });
                 return;
             }
             _this.writeJSON(path_1.default.resolve(_this.rootPath, "json", id, "counter.json"), _this.initialCounter());
@@ -132,7 +122,7 @@ var NostalgicCounter = (function () {
         });
         app.get("/api/counter", function (req, res) {
             console.log("/api/counter called.");
-            var host = req.headers["x-forwarded-for"];
+            var host = req.headers["x-forwarded-for"] || "";
             if (_this.isIgnore(host)) {
                 return;
             }
@@ -142,9 +132,7 @@ var NostalgicCounter = (function () {
                 ex = true;
             }
             if (!_this.exist(path_1.default.resolve(_this.rootPath, "json", id))) {
-                res.send({
-                    error: "ID '" + id + "' not found."
-                });
+                res.send({ error: "ID '" + id + "' not found." });
                 return;
             }
             var counter = _this.readJSON(path_1.default.resolve(_this.rootPath, "json", id, "counter.json"));
@@ -184,7 +172,7 @@ var NostalgicCounter = (function () {
         return json;
     };
     NostalgicCounter.prototype.writeJSON = function (jsonPath, json) {
-        var jsonStr = JSON.stringify(json, null, "  ");
+        var jsonStr = JSON.stringify(json, null, 2);
         fs_1.default.writeFileSync(jsonPath, jsonStr, { encoding: "utf-8" });
     };
     NostalgicCounter.prototype.exist = function (filePath) {
@@ -296,8 +284,7 @@ var NostalgicCounter = (function () {
         var ips = this.readJSON(path_1.default.resolve(this.rootPath, "json", id, "ips.json"));
         if (ips[host]) {
             var pre = moment_1.default(ips[host]);
-            if (now.valueOf() - pre.valueOf() <
-                idConfig.interval_minutes * 60 * 1000) {
+            if (now.valueOf() - pre.valueOf() < idConfig.interval_minutes * 60 * 1000) {
                 return false;
             }
         }
