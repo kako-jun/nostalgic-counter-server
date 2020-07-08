@@ -4,6 +4,7 @@ import os from "os";
 import fs from "fs";
 import path from "path";
 import moment from "moment";
+import crypto from "crypto";
 import express from "express";
 import bodyParser from "body-parser";
 const app = express();
@@ -41,7 +42,7 @@ interface Counter {
   last_year_date: string;
 }
 
-class NostalgicCounter {
+class NostalgicCounterServer {
   private rootPath: string;
   private appConfig: AppConfig;
 
@@ -57,13 +58,13 @@ class NostalgicCounter {
 
     if (!this.exist(path.resolve(this.rootPath, "json", "config.json"))) {
       this.writeJSON(path.resolve(this.rootPath, "json", "config.json"), {
-        listening_port
+        listening_port,
       });
     }
 
     if (!this.exist(path.resolve(this.rootPath, "json", "ignore_list.json"))) {
       this.writeJSON(path.resolve(this.rootPath, "json", "ignore_list.json"), {
-        host_list: []
+        host_list: [],
       });
     }
 
@@ -157,7 +158,7 @@ class NostalgicCounter {
 
       const dstIDConfig: IDConfig = {
         interval_minutes,
-        offset_count
+        offset_count,
       };
 
       this.writeJSON(path.resolve(this.rootPath, "json", id, "config.json"), dstIDConfig);
@@ -250,7 +251,7 @@ class NostalgicCounter {
       this_year: 0,
       this_year_date: now.format("YYYY"),
       last_year: 0,
-      last_year_date: now.subtract(1, "year").format("YYYY")
+      last_year_date: now.subtract(1, "year").format("YYYY"),
     };
   }
 
@@ -278,7 +279,7 @@ class NostalgicCounter {
 
     const ignoreList = this.readJSON(path.resolve(this.rootPath, "json", "ignore_list.json")) as IgnoreList;
 
-    const found = _.find(ignoreList.host_list, h => {
+    const found = _.find(ignoreList.host_list, (h) => {
       return h === host;
     });
 
@@ -297,13 +298,18 @@ class NostalgicCounter {
       fs.mkdirSync(idDirPath, { recursive: true });
     }
 
+    // 暗号化する
+    const cipher = crypto.createCipher("aes128", "42");
+    cipher.update(password, "utf8", "hex");
+    const cipheredText = cipher.final("hex");
+
     this.writeJSON(path.resolve(idDirPath, "password.json"), {
-      password
+      password: cipheredText,
     });
 
     this.writeJSON(path.resolve(idDirPath, "config.json"), {
       interval_minutes,
-      offset_count
+      offset_count,
     });
 
     this.writeJSON(path.resolve(idDirPath, "counter.json"), this.initialCounter());
@@ -316,7 +322,12 @@ class NostalgicCounter {
   private isPasswordCorrect(id: string, password: string): boolean {
     const passwordObject = this.readJSON(path.resolve(this.rootPath, "json", id, "password.json")) as Password;
 
-    if (password === passwordObject.password) {
+    // 復号化する
+    const decipher = crypto.createDecipher("aes128", "42");
+    decipher.update(passwordObject.password, "hex", "utf8");
+    const decipheredText = decipher.final("utf8");
+
+    if (password === decipheredText) {
       return true;
     }
 
@@ -381,7 +392,7 @@ class NostalgicCounter {
       this_year,
       this_year_date,
       last_year,
-      last_year_date
+      last_year_date,
     };
 
     this.writeJSON(path.resolve(this.rootPath, "json", id, "counter.json"), counter);
@@ -405,5 +416,5 @@ class NostalgicCounter {
   }
 }
 
-module.exports = NostalgicCounter;
-// export default NostalgicCounter;
+module.exports = NostalgicCounterServer;
+// export default NostalgicCounterServer;

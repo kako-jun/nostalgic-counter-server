@@ -8,11 +8,12 @@ var os_1 = __importDefault(require("os"));
 var fs_1 = __importDefault(require("fs"));
 var path_1 = __importDefault(require("path"));
 var moment_1 = __importDefault(require("moment"));
+var crypto_1 = __importDefault(require("crypto"));
 var express_1 = __importDefault(require("express"));
 var body_parser_1 = __importDefault(require("body-parser"));
 var app = express_1.default();
-var NostalgicCounter = (function () {
-    function NostalgicCounter(listening_port) {
+var NostalgicCounterServer = (function () {
+    function NostalgicCounterServer(listening_port) {
         if (listening_port === void 0) { listening_port = 42011; }
         this.rootPath = path_1.default.resolve(os_1.default.homedir(), ".nostalgic-counter");
         if (!this.exist(path_1.default.resolve(this.rootPath, "json"))) {
@@ -21,24 +22,24 @@ var NostalgicCounter = (function () {
         }
         if (!this.exist(path_1.default.resolve(this.rootPath, "json", "config.json"))) {
             this.writeJSON(path_1.default.resolve(this.rootPath, "json", "config.json"), {
-                listening_port: listening_port
+                listening_port: listening_port,
             });
         }
         if (!this.exist(path_1.default.resolve(this.rootPath, "json", "ignore_list.json"))) {
             this.writeJSON(path_1.default.resolve(this.rootPath, "json", "ignore_list.json"), {
-                host_list: []
+                host_list: [],
             });
         }
         this.appConfig = this.readJSON(path_1.default.resolve(this.rootPath, "json", "config.json"));
         this.initServer();
     }
-    NostalgicCounter.prototype.start = function () {
+    NostalgicCounterServer.prototype.start = function () {
         var _this = this;
         app.listen(this.appConfig.listening_port, function () {
             console.log("listening on port " + _this.appConfig.listening_port + "!");
         });
     };
-    NostalgicCounter.prototype.initServer = function () {
+    NostalgicCounterServer.prototype.initServer = function () {
         var _this = this;
         app.set("trust proxy", true);
         app.use(body_parser_1.default.urlencoded({ extended: true }));
@@ -95,7 +96,7 @@ var NostalgicCounter = (function () {
             }
             var dstIDConfig = {
                 interval_minutes: interval_minutes,
-                offset_count: offset_count
+                offset_count: offset_count,
             };
             _this.writeJSON(path_1.default.resolve(_this.rootPath, "json", id, "config.json"), dstIDConfig);
             res.send(dstIDConfig);
@@ -149,7 +150,7 @@ var NostalgicCounter = (function () {
             }
         });
     };
-    NostalgicCounter.prototype.initialCounter = function () {
+    NostalgicCounterServer.prototype.initialCounter = function () {
         var now = moment_1.default();
         return {
             total: 0,
@@ -164,18 +165,18 @@ var NostalgicCounter = (function () {
             this_year: 0,
             this_year_date: now.format("YYYY"),
             last_year: 0,
-            last_year_date: now.subtract(1, "year").format("YYYY")
+            last_year_date: now.subtract(1, "year").format("YYYY"),
         };
     };
-    NostalgicCounter.prototype.readJSON = function (jsonPath) {
+    NostalgicCounterServer.prototype.readJSON = function (jsonPath) {
         var json = JSON.parse(fs_1.default.readFileSync(jsonPath, { encoding: "utf-8" }));
         return json;
     };
-    NostalgicCounter.prototype.writeJSON = function (jsonPath, json) {
+    NostalgicCounterServer.prototype.writeJSON = function (jsonPath, json) {
         var jsonStr = JSON.stringify(json, null, 2);
         fs_1.default.writeFileSync(jsonPath, jsonStr, { encoding: "utf-8" });
     };
-    NostalgicCounter.prototype.exist = function (filePath) {
+    NostalgicCounterServer.prototype.exist = function (filePath) {
         try {
             fs_1.default.statSync(filePath);
             return true;
@@ -183,7 +184,7 @@ var NostalgicCounter = (function () {
         catch (error) { }
         return false;
     };
-    NostalgicCounter.prototype.isIgnore = function (host) {
+    NostalgicCounterServer.prototype.isIgnore = function (host) {
         console.log(host);
         var ignoreList = this.readJSON(path_1.default.resolve(this.rootPath, "json", "ignore_list.json"));
         var found = lodash_1.default.find(ignoreList.host_list, function (h) {
@@ -194,7 +195,7 @@ var NostalgicCounter = (function () {
         }
         return false;
     };
-    NostalgicCounter.prototype.createIDFiles = function (id, password, interval_minutes, offset_count) {
+    NostalgicCounterServer.prototype.createIDFiles = function (id, password, interval_minutes, offset_count) {
         var idDirPath = path_1.default.resolve(this.rootPath, "json", id);
         if (this.exist(idDirPath)) {
             return false;
@@ -202,25 +203,31 @@ var NostalgicCounter = (function () {
         else {
             fs_1.default.mkdirSync(idDirPath, { recursive: true });
         }
+        var cipher = crypto_1.default.createCipher("aes128", "42");
+        cipher.update(password, "utf8", "hex");
+        var cipheredText = cipher.final("hex");
         this.writeJSON(path_1.default.resolve(idDirPath, "password.json"), {
-            password: password
+            password: cipheredText,
         });
         this.writeJSON(path_1.default.resolve(idDirPath, "config.json"), {
             interval_minutes: interval_minutes,
-            offset_count: offset_count
+            offset_count: offset_count,
         });
         this.writeJSON(path_1.default.resolve(idDirPath, "counter.json"), this.initialCounter());
         this.writeJSON(path_1.default.resolve(idDirPath, "ips.json"), {});
         return true;
     };
-    NostalgicCounter.prototype.isPasswordCorrect = function (id, password) {
+    NostalgicCounterServer.prototype.isPasswordCorrect = function (id, password) {
         var passwordObject = this.readJSON(path_1.default.resolve(this.rootPath, "json", id, "password.json"));
-        if (password === passwordObject.password) {
+        var decipher = crypto_1.default.createDecipher("aes128", "42");
+        decipher.update(passwordObject.password, "hex", "utf8");
+        var decipheredText = decipher.final("utf8");
+        if (password === decipheredText) {
             return true;
         }
         return false;
     };
-    NostalgicCounter.prototype.incrementCounter = function (id, src) {
+    NostalgicCounterServer.prototype.incrementCounter = function (id, src) {
         var now = moment_1.default();
         var today = 0;
         var today_date = now.format("YYYY-MM-DD");
@@ -274,12 +281,12 @@ var NostalgicCounter = (function () {
             this_year: this_year,
             this_year_date: this_year_date,
             last_year: last_year,
-            last_year_date: last_year_date
+            last_year_date: last_year_date,
         };
         this.writeJSON(path_1.default.resolve(this.rootPath, "json", id, "counter.json"), counter);
         return counter;
     };
-    NostalgicCounter.prototype.isIntervalOK = function (idConfig, id, host) {
+    NostalgicCounterServer.prototype.isIntervalOK = function (idConfig, id, host) {
         var now = moment_1.default();
         var ips = this.readJSON(path_1.default.resolve(this.rootPath, "json", id, "ips.json"));
         if (ips[host]) {
@@ -292,6 +299,6 @@ var NostalgicCounter = (function () {
         this.writeJSON(path_1.default.resolve(this.rootPath, "json", id, "ips.json"), ips);
         return true;
     };
-    return NostalgicCounter;
+    return NostalgicCounterServer;
 }());
-module.exports = NostalgicCounter;
+module.exports = NostalgicCounterServer;
