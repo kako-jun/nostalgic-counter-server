@@ -1,8 +1,8 @@
-[English](https://github.com/kako-jun/nostalgic-counter)
+[English](https://github.com/kako-jun/nostalgic-counter-server)
 
-# :pager: Nostalgic Counter / ノスタルジックカウンター
+# :pager: Nostalgic Counter Server / ノスタルジックカウンターサーバー
 
-[![Build Status](https://travis-ci.org/kako-jun/nostalgic-counter.svg?branch=master)](https://travis-ci.org/kako-jun/nostalgic-counter)
+[![Build Status](https://travis-ci.org/kako-jun/nostalgic-counter-server.svg?branch=master)](https://travis-ci.org/kako-jun/nostalgic-counter-server)
 
 `Nostalgic Counter` は、インターネット黎明期のホームページでお馴染みだった「アクセスカウンター」を、いま風の技術で再現したものです。
 
@@ -15,9 +15,9 @@
 
 JavaScript が動作する環境であれば表示可能なので、GitHub Pages などの静的サイトにも設置できます。
 
-サーバー側、クライアント側に分かれており、こちらはクライアント側です。
+サーバー側、クライアント側に分かれており、こちらはサーバー側です。
 
-サーバー側は [Nostalgic Counter Server](https://github.com/kako-jun/nostalgic-counter-server/blob/master/README_ja.md) を参照。
+クライアント側は [Nostalgic Counter](https://github.com/kako-jun/nostalgic-counter/blob/master/README_ja.md) を参照。
 
 どちらもソースコードを公開しているので、個人で借りたクラウドに設置することも、改造することも可能です。
 
@@ -27,288 +27,129 @@ JavaScript が動作する環境であれば表示可能なので、GitHub Pages
 
 [デモサイト](https://nostalgic-counter.llll-ll.com/demo)
 
-### VS.
-
-#### VS. Google Analytics
-
-Google Analytics でもアクセス数を知ることはできます。
-
-しかし、その数値をサイトに埋め込んで公開するようには作られていません。
-
-#### VS. 古き良き CGI でのアクセスカウンター
-
-CGI の実行を許可してくれるサーバーが、現在は少なくなっています。
-
-Perl で書かれたものが多く、改造のための学習コストが大きいです。
-
-#### VS. その他、企業製のアクセスカウンター
-
-ソースコードが公開されていません。
-
-その企業のアカウントを取得する必要があります。
-
-広告が入ります。
-
 ## Installation
 
 ### Requirements
 
-モダンな Web ブラウザ
+Node.js
 
 ### Download binaries
 
-- [nostalgic-counter.min.js](https://github.com/kako-jun/nostalgic-counter/releases)
+- [nostalgic-counter-server.js](https://raw.githubusercontent.com/kako-jun/nostalgic-counter-server/master/dist/nostalgic-counter-server.js)
 
-### CDN
+### npm
 
-```html
-<script src="https://cdn.jsdelivr.net/gh/kako-jun/nostalgic-counter@v1.0.2/dist/nostalgic-counter.min.js"></script>
+[nostalgic-counter-server](https://www.npmjs.com/package/nostalgic-counter-server)
+
+```sh
+$ npm install nostalgic-counter-server
 ```
 
 ## Features
 
 ### Usage
 
-#### 1 番簡単な使い方
+#### js からの呼び出し方
 
-自分のサイトの HTML を開き、`<body>` 末尾に以下を追加します。
-
-```html
-<script src="https://cdn.jsdelivr.net/gh/kako-jun/nostalgic-counter@v1.0.2/dist/nostalgic-counter.min.js"></script>
-
-<script>
-  window.onload = async () => {
-    const counter = await window.NostalgicCounter.getCounter(
-      "https://nostalgic-counter.llll-ll.com/api/counter?id=sample"
-    );
-
-    if (counter) {
-      window.NostalgicCounter.showCounter("nostalgic-counter", counter.total);
-    }
-  };
-</script>
-```
-
-カウンターを表示したい場所に、以下を追加します。
-
-```html
-<p>あなたは <span id="nostalgic-counter"></span> 人目の訪問者です。</p>
-```
-
-Web ブラウザで HTML を開くと、カウンターが表示されていることを確認できるでしょう。
-
-ただし、この例では `sample` という ID のカウンターを指定しており、自分のサイト専用のカウンターにはなっていません。
-
-`sample` カウンターを使った人が他にいた場合、その人のサイトと共有のカウンターになってしまいます。
-
-そのため、まずは自分専用のカウンターを作ることが必要です。
-
-#### 自分専用のカウンターを作る
-
-操作は全て Web ブラウザで行います。
-
-URL 欄 に「したい操作を意味する文字列」を打ち込み、Enter を押すことで実行します。
-
-カウンターを新規作成する操作は、以下です。
-（`ff2` という ID のカウンターを、`nobara` というパスワードで作る場合）
-
-```
-https://nostalgic-counter.llll-ll.com/api/admin/new?id=ff2&password=nobara
-```
-
-HTML 内のコードは、以下のようになります。
+サーバー上で動作させるための Node.js のプロジェクトを 1 つ作り、そこから
 
 ```js
-const counter = await window.NostalgicCounter.getCounter("https://nostalgic-counter.llll-ll.com/api/counter?id=ff2");
+const NostalgicCounterServer = require("nostalgic-counter-server");
+const nostalgicCounterServer = new NostalgicCounterServer();
+nostalgicCounterServer.start();
 ```
 
-カウンターを使う時には、`&password=nobara` は必要無いことに注意してください。
+のように呼び出します。
 
-誤って書いてしまうと、パスワードがバレてしまいます。
+これによって、カウンター用の Web API がホストされるようになります。
 
-#### 自分のカウンターに対して、設定を変更する
+ユーザーのホーム以下に `.nostalgic-counter` ディレクトリが作られます。
 
-新規作成された直後のカウンターは、以下のような設定になっています。
+ディレクトリ構成は、以下です。
 
-- アクセス数: 0
-- 別アクセスとみなす経過時間": 0 分
-- アクセス数に履かせるゲタ: 0
+- .nostalgic-counter
+  - json
+    - config.json
+    - ignore_list.json
+    - default
+      - config.json
+      - counter.json
+      - ips.json
+    - {カウンター 1 用}
+      - config.json
+      - counter.json
+      - ips.json
+    - {カウンター 2 用} …‥
 
-アクセス数を 0 にリセットする操作は、以下です。
+クライアントから、カウンターを新規作成する Web API
+`https://{設置したドメイン}/api/admin/new`
+が呼ばれるたびに、カウンター用のディレクトリが増えていきます。
 
-```
-https://nostalgic-counter.llll-ll.com/api/admin/reset?id=ff2&password=nobara
-```
-
-「別アクセスとみなす経過時間」が 0 分のままだと、サイトをリロードするたびに数値が増えます。
-
-60 分に変更する操作は、以下です。
-
-```
-https://nostalgic-counter.llll-ll.com/api/admin/config?id=ff2&password=nobara&interval_minutes=60
-```
-
-「アクセス数に履かせるゲタ」とは、「サイトを引っ越した際に、それまでのアクセス数を引き継げると便利だなー」と思って付けた機能です。
-
-単純に、ゲタの数値だけ足した数値が、カウンターに表示されます。
-
-10 万アクセスからスタートしたい場合は、以下です。
-
-```
-https://nostalgic-counter.llll-ll.com/api/admin/config?id=ff2&password=nobara&offset_count=100000
-```
-
-現在の設定内容を確認する操作は、以下です。
-
-```
-https://nostalgic-counter.llll-ll.com/api/admin/config?id=ff2&password=nobara
-```
+`.nostalgic-counter/config.json` の内容は、以下です。
 
 ```js
 {
-  interval_minutes: 60,
-  offset_count: 100000
+  "listening_port": 42011
 }
 ```
 
-#### これまでのアクセス数を取得する
+Web API をホストするポートを変更できます。
 
-累計を取得する操作は、以下です。
-
-```
-https://nostalgic-counter.llll-ll.com/api/counter?id=ff2
-```
-
-```js
-{
-  total: 2;
-}
-```
-
-サイト管理者以外にも見えて良いデータなので、パスワードは必要ありません。
-
-#### さらに細かい情報を取得する
-
-URL に `&ex` を付けると、取得できる情報が増えます。
-
-```
-https://nostalgic-counter.llll-ll.com/api/counter?id=ff2&ex
-```
-
-```js
-{
-  total: 2,
-  today: 1,
-  today_date: "2020-07-09",
-  yesterday: 0,
-  yesterday_date: "2020-07-08",
-  this_month: 2,
-  this_month_date: "2020-07",
-  last_month: 0,
-  last_month_date: "2020-06",
-  this_year: 2,
-  this_year_date: "2020",
-  last_year: 0,
-  last_year_date: "2019"
-}
-```
-
-### Examples
-
-Nostalgic Counter には 3 つの API があります。
-
-- `window.NostalgicCounter.getCounter()`
-- `window.NostalgicCounter.showCounter()`
-- `window.NostalgicCounter.showKiriban()`
-
-基本的な使い方は、
-`getCounter()` でカウンターを取得し、
-そのカウンターに対して `showCounter()` を呼ぶことで、サイトに数値を表示します。
-
-`showCounter()` の引数を変えると、数値の代わりに画像を使うこともできます。
-
-今日だけでなく、昨年、先月、先週、昨日のアクセス数も表示できます。
-
-カウンターに対して `showKiriban()` を呼ぶと、キリ番関連の色んなメッセージを表示します。
-
-- 1000 アクセスごとをキリ番にする。（間隔での指定）
-- 12345 アクセスをキリ番にする。（直値での指定）
-- 次回のキリ番を知らせる。
-- キリ番だったことを、Twitter でシェアする。
-
-などの機能があります。
-
-詳細は、デモサイトのコードを見てください。
+クライアントの Web ブラウザから
+`https://{設置したドメイン}/api/counter`
+を開いて、JSON が表示されたら成功です。
 
 ### Unsupported
 
-#### 昨年、先月、先週、昨日のアクセス数は表示できるが、一昨年のアクセス数、今月の日ごとのアクセス数などは無理
+#### Node.js の Express を使用しているため、80 番ポート、443 番ポートでは待ち受けできない
 
-機能を実装すれば可能ですが、それらを表示したいケースが無かったので予定していません。
+Express のセキュリティ上の制約です。
 
-#### パスワード無しでカウンターを作ってしまうと、もうその ID ではカウンターを作れない
+回避方法は複数ありますが、リバースプロキシを立てる方法がオススメです。
 
-例えば、`ff2` という名前のカウンターを作る場合、ブラウザの URL 欄に
+Nginx でのリバースプロキシの立て方は、以下です。
+（hoge.com での設定例です。自分のドメイン用に書き換えてください）
 
-```
-https://nostalgic-counter.llll-ll.com/api/admin/new?id=ff2&password=nobara
-```
-
-と打って、開く必要があります。
-
-誤って
+`/etc/nginx/sites-available/default` の内容
 
 ```
-https://nostalgic-counter.llll-ll.com/api/admin/new?id=ff2
+server {
+  server_name hoge.com;
+  listen 443 ssl http2;
+
+  ssl_certificate /etc/letsencrypt/live/hoge.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/hoge.com/privkey.pem;
+
+  add_header 'Access-Control-Allow-Origin' '*' always;
+  add_header 'Access-Control-Allow-Headers' 'Origin, X-Requested-With, Content-Type, Accept';
+  add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
+
+  location /api {
+    proxy_set_header X-Forwarded-for $remote_addr;
+    proxy_pass http://localhost:42011;
+  }
+}
 ```
-
-と打ってしまうと、パスワード無しのカウンターが作られます。
-
-もう `ff2` という ID は使用済みになったので、作り直すことはできません。
-
-諦めて、`ff3` にでもしてください。
-
-#### 作成済みのカウンターのパスワードを変更することはできない
-
-シンプルにするために、この制限を設けています。
-
-パスワード無しカウンターから、パスワード有りカウンターに変更できないのと同様です。
-
-パスワードを変えたい場合は、別 ID でカウンターを新規作成し、これまでのアクセス数をゲタとして設定しましょう。
-
-#### 未使用のカウンターは、新年になるたびに削除される
-
-誤って作ったカウンターや、もう必要無くなったカウンターを削除したい場合、明示的に削除することはできません。
-
-削除依頼を出した人が、カウンターを作成した本人かを証明する手段が無いためです。
-
-そのため、1 年間アクセスの無かったカウンターを、自動的に削除する運用にしています。
-
-サイトにカウンターを設置したままだと、アクセスが発生してしまうため、まずはサイトから取り外してください。
-
-例えば、最後のアクセスが 2020-04-02 だった場合、2021-01-01 にはまだ 1 年間経過していないので、2022-01-01 に削除されます。
-
-そのカウンターの ID は開放され、別の人が使えるようになります。
 
 ### Coding
 
 改造する場合の手順は、以下です。
 
-Node.js と TypeScript で実装しており、`nostalgic-counter.ts` にまとまっています。
+Node.js と TypeScript で実装しており、`nostalgic-counter-server.ts` にまとまっています。
 
 ```sh
-$ git clone git@github.com:kako-jun/nostalgic-counter.git
-$ cd nostalgic-counter
+$ git clone git@github.com:kako-jun/nostalgic-counter-server.git
+$ cd nostalgic-counter-server
 $ npm install
 ```
 
-`nostalgic-counter.ts` をコード変更します。
+`nostalgic-counter-server.ts` をコード変更します。
 
 ```sh
 $ npm run build
 ```
 
-`dist/nostalgic-counter.min.js` が生成されます。
+`dist/nostalgic-counter-server.js` が生成されます。
 
 ### Contributing
 
@@ -347,7 +188,7 @@ kako-jun
 
 This project is licensed under the MIT License.
 
-See the [LICENSE](https://github.com/kako-jun/nostalgic-counter/blob/master/LICENSE) file for details.
+See the [LICENSE](https://github.com/kako-jun/nostalgic-counter-server/blob/master/LICENSE) file for details.
 
 ## Acknowledgments
 
