@@ -95,7 +95,7 @@ nostalgicCounterServer.start();
 
 #### 設定の変更
 
-`.nostalgic-counter/config.json` の内容は、以下です。
+`.nostalgic-counter/json/config.json` の内容は、以下です。
 
 ```js
 {
