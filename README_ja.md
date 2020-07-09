@@ -63,7 +63,15 @@ nostalgicCounterServer.start();
 
 これによって、カウンター用の Web API がホストされるようになります。
 
+クライアントの Web ブラウザから
+`https://{設置したドメイン}/api/counter`
+を開いて、JSON が表示されたら成功です。
+
+#### カウンターの数値が永続化される場所
+
 ユーザーのホーム以下に `.nostalgic-counter` ディレクトリが作られます。
+
+カウンターの数値は、ここに永続化されます。
 
 ディレクトリ構成は、以下です。
 
@@ -79,11 +87,13 @@ nostalgicCounterServer.start();
       - config.json
       - counter.json
       - ips.json
-    - {カウンター 2 用} …‥
+    - {カウンター 2 用} ……
 
 クライアントから、カウンターを新規作成する Web API
 `https://{設置したドメイン}/api/admin/new`
 が呼ばれるたびに、カウンター用のディレクトリが増えていきます。
+
+#### 設定の変更
 
 `.nostalgic-counter/config.json` の内容は、以下です。
 
@@ -94,10 +104,6 @@ nostalgicCounterServer.start();
 ```
 
 Web API をホストするポートを変更できます。
-
-クライアントの Web ブラウザから
-`https://{設置したドメイン}/api/counter`
-を開いて、JSON が表示されたら成功です。
 
 ### Unsupported
 
