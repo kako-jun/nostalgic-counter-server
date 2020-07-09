@@ -25,7 +25,7 @@ JavaScript が動作する環境であれば表示可能なので、GitHub Pages
 
 ### Demo
 
-[デモサイト](https://nostalgic-counter.llll-ll.com/demo)
+[デモサイト](https://llll-ll.com/demo/nostalgic-counter-demo.html)
 
 ## Installation
 
