@@ -118,7 +118,7 @@ Nginx でのリバースプロキシの立て方は、以下です。
 
 `/etc/nginx/sites-available/default` の内容
 
-```
+```conf
 server {
   server_name hoge.com;
   listen 443 ssl http2;
