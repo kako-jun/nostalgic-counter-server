@@ -52,6 +52,9 @@ var NostalgicCounterServer = (function () {
             }
             var id = req.query.id || "default";
             var password = req.query.password || "";
+            if (typeof id !== "string" || typeof password !== "string") {
+                return;
+            }
             if (!_this.createIDFiles(id, password, 0, 0)) {
                 res.send({ error: "ID '" + id + "' already exists." });
                 return;
@@ -67,6 +70,9 @@ var NostalgicCounterServer = (function () {
             }
             var id = req.query.id || "default";
             var password = req.query.password || "";
+            if (typeof id !== "string" || typeof password !== "string") {
+                return;
+            }
             if (!_this.exist(path_1.default.resolve(_this.rootPath, "json", id))) {
                 res.send({ error: "ID '" + id + "' not found." });
                 return;
@@ -109,6 +115,9 @@ var NostalgicCounterServer = (function () {
             }
             var id = req.query.id || "default";
             var password = req.query.password || "";
+            if (typeof id !== "string" || typeof password !== "string") {
+                return;
+            }
             if (!_this.exist(path_1.default.resolve(_this.rootPath, "json", id))) {
                 res.send({ error: "ID '" + id + "' not found." });
                 return;
@@ -128,6 +137,9 @@ var NostalgicCounterServer = (function () {
                 return;
             }
             var id = req.query.id || "default";
+            if (typeof id !== "string") {
+                return;
+            }
             var ex = false;
             if (req.query.ex !== undefined) {
                 ex = true;

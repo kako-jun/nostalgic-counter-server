@@ -104,6 +104,9 @@ class NostalgicCounterServer {
 
       const id = req.query.id || "default";
       const password = req.query.password || "";
+      if (typeof id !== "string" || typeof password !== "string") {
+        return;
+      }
 
       if (!this.createIDFiles(id, password, 0, 0)) {
         res.send({ error: "ID '" + id + "' already exists." });
@@ -125,6 +128,9 @@ class NostalgicCounterServer {
 
       const id = req.query.id || "default";
       const password = req.query.password || "";
+      if (typeof id !== "string" || typeof password !== "string") {
+        return;
+      }
 
       if (!this.exist(path.resolve(this.rootPath, "json", id))) {
         res.send({ error: "ID '" + id + "' not found." });
@@ -176,6 +182,9 @@ class NostalgicCounterServer {
 
       const id = req.query.id || "default";
       const password = req.query.password || "";
+      if (typeof id !== "string" || typeof password !== "string") {
+        return;
+      }
 
       if (!this.exist(path.resolve(this.rootPath, "json", id))) {
         res.send({ error: "ID '" + id + "' not found." });
@@ -203,6 +212,9 @@ class NostalgicCounterServer {
       }
 
       const id = req.query.id || "default";
+      if (typeof id !== "string") {
+        return;
+      }
 
       let ex = false;
       if (req.query.ex !== undefined) {
