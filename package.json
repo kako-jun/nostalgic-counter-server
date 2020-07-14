@@ -1,6 +1,6 @@
 {
   "name": "nostalgic-counter-server",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "a nostalgic counter.",
   "main": "dist/nostalgic-counter-server.js",
   "scripts": {
