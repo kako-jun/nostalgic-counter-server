@@ -10,6 +10,7 @@ import bodyParser from "body-parser";
 const app = express();
 
 interface AppConfig {
+  password: string;
   listening_port: number;
 }
 
@@ -18,7 +19,7 @@ interface IgnoreList {
 }
 
 interface Password {
-  password: string;
+  ciphered_password: string;
 }
 
 interface IDConfig {
@@ -46,7 +47,7 @@ class NostalgicCounterServer {
   private rootPath: string;
   private appConfig: AppConfig;
 
-  constructor(listening_port: number = 42011) {
+  constructor(password: string = "", listening_port: number = 42011) {
     // instance variables
     // this.rootPath = path.dirname(import.meta.url.replace("file:///", ""));
     // this.rootPath = __dirname;
@@ -58,6 +59,7 @@ class NostalgicCounterServer {
 
     if (!this.exist(path.resolve(this.rootPath, "json", "config.json"))) {
       this.writeJSON(path.resolve(this.rootPath, "json", "config.json"), {
+        password,
         listening_port,
       });
     }
@@ -311,12 +313,12 @@ class NostalgicCounterServer {
     }
 
     // 暗号化する
-    const cipher = crypto.createCipher("aes128", "42");
+    const cipher = crypto.createCipher("aes128", this.appConfig.password);
     cipher.update(password, "utf8", "hex");
     const cipheredText = cipher.final("hex");
 
     this.writeJSON(path.resolve(idDirPath, "password.json"), {
-      password: cipheredText,
+      ciphered_password: cipheredText,
     });
 
     this.writeJSON(path.resolve(idDirPath, "config.json"), {
@@ -335,8 +337,8 @@ class NostalgicCounterServer {
     const passwordObject = this.readJSON(path.resolve(this.rootPath, "json", id, "password.json")) as Password;
 
     // 復号化する
-    const decipher = crypto.createDecipher("aes128", "42");
-    decipher.update(passwordObject.password, "hex", "utf8");
+    const decipher = crypto.createDecipher("aes128", this.appConfig.password);
+    decipher.update(passwordObject.ciphered_password, "hex", "utf8");
     const decipheredText = decipher.final("utf8");
 
     if (password === decipheredText) {

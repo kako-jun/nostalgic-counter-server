@@ -13,7 +13,8 @@ var express_1 = __importDefault(require("express"));
 var body_parser_1 = __importDefault(require("body-parser"));
 var app = express_1.default();
 var NostalgicCounterServer = (function () {
-    function NostalgicCounterServer(listening_port) {
+    function NostalgicCounterServer(password, listening_port) {
+        if (password === void 0) { password = ""; }
         if (listening_port === void 0) { listening_port = 42011; }
         this.rootPath = path_1.default.resolve(os_1.default.homedir(), ".nostalgic-counter");
         if (!this.exist(path_1.default.resolve(this.rootPath, "json"))) {
@@ -22,6 +23,7 @@ var NostalgicCounterServer = (function () {
         }
         if (!this.exist(path_1.default.resolve(this.rootPath, "json", "config.json"))) {
             this.writeJSON(path_1.default.resolve(this.rootPath, "json", "config.json"), {
+                password: password,
                 listening_port: listening_port,
             });
         }
@@ -215,11 +217,11 @@ var NostalgicCounterServer = (function () {
         else {
             fs_1.default.mkdirSync(idDirPath, { recursive: true });
         }
-        var cipher = crypto_1.default.createCipher("aes128", "42");
+        var cipher = crypto_1.default.createCipher("aes128", this.appConfig.password);
         cipher.update(password, "utf8", "hex");
         var cipheredText = cipher.final("hex");
         this.writeJSON(path_1.default.resolve(idDirPath, "password.json"), {
-            password: cipheredText,
+            ciphered_password: cipheredText,
         });
         this.writeJSON(path_1.default.resolve(idDirPath, "config.json"), {
             interval_minutes: interval_minutes,
@@ -231,8 +233,8 @@ var NostalgicCounterServer = (function () {
     };
     NostalgicCounterServer.prototype.isPasswordCorrect = function (id, password) {
         var passwordObject = this.readJSON(path_1.default.resolve(this.rootPath, "json", id, "password.json"));
-        var decipher = crypto_1.default.createDecipher("aes128", "42");
-        decipher.update(passwordObject.password, "hex", "utf8");
+        var decipher = crypto_1.default.createDecipher("aes128", this.appConfig.password);
+        decipher.update(passwordObject.ciphered_password, "hex", "utf8");
         var decipheredText = decipher.final("utf8");
         if (password === decipheredText) {
             return true;
